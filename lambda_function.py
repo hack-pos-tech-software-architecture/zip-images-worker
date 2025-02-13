@@ -16,27 +16,32 @@ s3_client = boto3.client("s3", region_name="us-east-1")
 def lambda_handler(event, context):
     for record in event["Records"]:
         message = json.loads(record["body"])
-        frames = message["frames"]
-        bucket = message["bucket"]
+        frames  = message["frames"]
+        bucket  = message["bucket"]
+        file_id = message["file_id"]
 
         print(f"frames ---> {frames}")
         print(f"bucket ---> {bucket}")
         
         temp_dir = tempfile.mkdtemp()
-        zip_filename = f"frames-{uuid.uuid4()}.zip"
+        zip_filename = f"frames-{file_id}.zip"
         zip_path = os.path.join(temp_dir, zip_filename)
         
         try:
-            print("Baixando as imagens do S3")
             with zipfile.ZipFile(zip_path, "w") as zipf:
                 for frame in frames:
-                    frame_temp_path = os.path.join(temp_dir, frame)
-                    s3_client.download_file(bucket, frame, frame_temp_path)
+                    pathFrame = f"frames/{file_id}/{frame}"
+                    print(f"path ---> {pathFrame}")
+                    frame_temp_path = os.path.join(temp_dir, pathFrame)
+                    s3_client.download_file(bucket, pathFrame, frame_temp_path)
                     zipf.write(frame_temp_path, arcname=frame)
+
+            print("Imagens do S3 baixadas")
             
-            print("Fazendo upload do arquivo ZIP para o S3")
             zip_s3_key = f"zips/{zip_filename}"
             s3_client.upload_file(zip_path, bucket, zip_s3_key)
+
+            print("Relizado upload do arquivo ZIP para o S3")
             
             # Envia notificação via SNS
             # zip_url = f"https://{bucket}.s3.amazonaws.com/{zip_s3_key}"
