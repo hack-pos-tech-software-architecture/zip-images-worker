@@ -18,20 +18,23 @@ def lambda_handler(event, context):
         message = json.loads(record["body"])
         frames = message["frames"]
         bucket = message["bucket"]
+
+        print(f"frames ---> {frames}")
+        print(f"bucket ---> {bucket}")
         
         temp_dir = tempfile.mkdtemp()
         zip_filename = f"frames-{uuid.uuid4()}.zip"
         zip_path = os.path.join(temp_dir, zip_filename)
         
         try:
-            # Baixa as imagens do S3
+            print("Baixando as imagens do S3")
             with zipfile.ZipFile(zip_path, "w") as zipf:
                 for frame in frames:
                     frame_temp_path = os.path.join(temp_dir, frame)
                     s3_client.download_file(bucket, frame, frame_temp_path)
                     zipf.write(frame_temp_path, arcname=frame)
             
-            # Faz upload do arquivo ZIP para o S3
+            print("Fazendo upload do arquivo ZIP para o S3")
             zip_s3_key = f"zips/{zip_filename}"
             s3_client.upload_file(zip_path, bucket, zip_s3_key)
             
