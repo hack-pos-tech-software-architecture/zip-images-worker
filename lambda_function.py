@@ -30,9 +30,8 @@ def lambda_handler(event, context):
         try:
             with zipfile.ZipFile(zip_path, "w") as zipf:
                 for frame in frames:
+                    frame_temp_path = os.path.join(temp_dir, frame)
                     pathFrame = f"frames/{file_id}/{frame}"
-                    print(f"path ---> {pathFrame}")
-                    frame_temp_path = os.path.join(temp_dir, pathFrame)
                     s3_client.download_file(bucket, pathFrame, frame_temp_path)
                     zipf.write(frame_temp_path, arcname=frame)
 
